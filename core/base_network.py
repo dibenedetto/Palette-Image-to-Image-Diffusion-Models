@@ -14,7 +14,7 @@ class BaseNetwork(nn.Module):
     
     def init_func(m):
       classname = m.__class__.__name__
-      if classname.find('InstanceNorm2d') != -1:
+      if classname.find('InstanceNorm3d') != -1:
         if hasattr(m, 'weight') and m.weight is not None:
           nn.init.constant_(m.weight.data, 1.0)
         if hasattr(m, 'bias') and m.bias is not None:
