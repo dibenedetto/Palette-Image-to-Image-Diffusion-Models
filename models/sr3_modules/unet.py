@@ -3,6 +3,8 @@ import torch
 from torch import nn
 from inspect import isfunction
 
+import transform
+
 class UNet(nn.Module):
     def __init__(
         self,
@@ -15,9 +17,23 @@ class UNet(nn.Module):
         res_blocks=3,
         dropout=0,
         with_noise_level_emb=True,
-        image_size=128
+        image_size=128,
+
+        in_transform_name   = None,
+        in_transform_kwargs = None,
     ):
         super().__init__()
+
+        self.in_transform = None
+        if in_transform_name is not None:
+            if in_transform_kwargs is None:
+                in_transform_kwargs = {}
+            if in_transform_name == "slam_transform":
+                self.in_transform = transform.SLAMTransform(**in_transform_kwargs)
+            else:
+                raise ValueError(f'in_transform_name "{in_transform_name}" is not recognized')
+        else:
+            self.in_transform = nn.Identity()
 
         if with_noise_level_emb:
             noise_level_channel = inner_channel
@@ -78,6 +94,8 @@ class UNet(nn.Module):
         self.final_conv = Block(pre_channel, default(out_channel, in_channel), groups=norm_groups)
 
     def forward(self, x, time):
+        x = self.in_transform(x)
+
         t = self.noise_level_mlp(time) if exists(
             self.noise_level_mlp) else None
 

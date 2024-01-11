@@ -5,6 +5,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+import transform
+
 from .nn import (
     checkpoint,
     zero_module,
@@ -361,6 +363,9 @@ class UNet(nn.Module):
         use_scale_shift_norm=True,
         resblock_updown=True,
         use_new_attention_order=False,
+
+        in_transform_name   = None,
+        in_transform_kwargs = None,
     ):
 
         super().__init__()
@@ -382,6 +387,17 @@ class UNet(nn.Module):
         self.num_heads = num_heads
         self.num_head_channels = num_head_channels
         self.num_heads_upsample = num_heads_upsample
+
+        self.in_transform = None
+        if in_transform_name is not None:
+            if in_transform_kwargs is None:
+                in_transform_kwargs = {}
+            if in_transform_name == "slam_transform":
+                self.in_transform = transform.SLAMTransform(**in_transform_kwargs)
+            else:
+                raise ValueError(f'in_transform_name "{in_transform_name}" is not recognized')
+        else:
+            self.in_transform = nn.Identity()
 
         cond_embed_dim = inner_channel * 4
         self.cond_embed = nn.Sequential(
@@ -529,6 +545,9 @@ class UNet(nn.Module):
         :param gammas: a 1-D batch of gammas.
         :return: an [N x C x ...] Tensor of outputs.
         """
+
+        x = self.in_transform(x)
+
         hs = []
         gammas = gammas.view(-1, )
         emb = self.cond_embed(gamma_embedding(gammas, self.inner_channel))

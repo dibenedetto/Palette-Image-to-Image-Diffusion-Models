@@ -83,8 +83,6 @@
                     "init_type": "kaiming", // method can be [normal | xavier| xavier_uniform | kaiming | orthogonal], default is kaiming
                     "module_name": "guided_diffusion", // sr3 | guided_diffusion
                     "unet": {
-                        "in_channel": 6,
-                        "out_channel": 1,
                         "inner_channel": 64,
                         "channel_mults": [
                             1,
@@ -100,7 +98,18 @@
                         "num_head_channels": 32,
                         "res_blocks": 2,
                         "dropout": 0.2,
-                        "image_size": 224
+
+                        // hslam
+                        ////////////////////////////////////////////////////////////////////////////
+                        "in_channel"          : 4,
+                        "out_channel"         : 1,
+                        "image_size"          : 64,
+                        "in_transform_name"   : "slam_transform",
+                        "in_transform_kwargs" : {
+                            "image_shape"     : [666, 64, 64],  // => (K, image_size, image_size)
+                            "out_channels"    : 4               // => in_channel
+                        }
+                        ////////////////////////////////////////////////////////////////////////////
                     },
                     "beta_schedule": {
                         "train": {
