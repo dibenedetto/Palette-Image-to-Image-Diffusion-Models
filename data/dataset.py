@@ -197,14 +197,14 @@ class STFDataset(data.Dataset):
         images = []
         for i in range(0, 60, 20):
             base_fname = f'{base_path}{str(i).zfill(5)}'
-            color_img  = np.array(Image.open(f'{base_fname}_color.png'))
-            sseg_img   = np.array(Image.open(f'{base_fname}_sseg.png' ))
+            color_img  = np.array(Image.open(f'{base_fname}_color.png')).astype(np.float32) / 255
+            sseg_img   = np.array(Image.open(f'{base_fname}_sseg.png' )).astype(np.float32) / 255
             images.push(color_img)
             images.push(sseg_img )
 
-        volume     = np.load(f'{base_path}10_slam_sdf.npz')
+        volume     = np.load(f'{base_path}10_slam_sdf.npz').astype(np.float32)
         cond_image = stf.flatten(volume, images, self.out_size)
-        gt_image   = np.load(f'{base_path}04_scene_sdf.npz')
+        gt_image   = np.load(f'{base_path}04_scene_sdf.npz').astype(np.float32)
 
         ret = {
             'gt_image'   : gt_image,
