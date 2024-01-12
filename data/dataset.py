@@ -7,6 +7,13 @@ import numpy as np
 
 from .util.mask import (bbox2mask, brush_stroke_mask, get_irregular_mask, random_bbox, random_cropping_bbox)
 
+
+import glob
+import sys
+sys.path.append("..")
+import core.stf as stf
+
+
 IMG_EXTENSIONS = [
     '.jpg', '.JPG', '.jpeg', '.JPEG',
     '.png', '.PNG', '.ppm', '.PPM', '.bmp', '.BMP',
@@ -174,32 +181,37 @@ class ColorizationDataset(data.Dataset):
         return len(self.flist)
 
 
-class HSLAMDataset(data.Dataset):
-    def __init__(self, data_root, data_flist, data_len=-1, image_size=[224, 224], loader=pil_loader):
-        self.data_root = data_root
-        flist = make_dataset(data_flist)
+class STFDataset(data.Dataset):
+    def __init__(self, data_root, data_len=-1, out_size=64):
+        base_paths = glob.glob(os.path.join(data_root, '00000_color.png'))
         if data_len > 0:
-            self.flist = flist[:int(data_len)]
-        else:
-            self.flist = flist
-        self.tfs = transforms.Compose([
-                transforms.Resize((image_size[0], image_size[1])),
-                transforms.ToTensor(),
-                transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5,0.5, 0.5])
-        ])
-        self.loader = loader
-        self.image_size = image_size
+            base_paths = base_paths[:int(data_len)]
+        base_paths = [f'{os.path.dirname(path)}{os.path.sep}' for path in base_paths]
+
+        self.base_paths = base_paths
+        self.out_size   = out_size
 
     def __getitem__(self, index):
-        ret = {}
-        file_name = str(self.flist[index]).zfill(5) + '.png'
+        base_path = self.base_paths[index]
 
-        img = self.tfs(self.loader('{}/{}/{}'.format(self.data_root, 'color', file_name)))
-        cond_image = self.tfs(self.loader('{}/{}/{}'.format(self.data_root, 'gray', file_name)))
+        images = []
+        for i in range(0, 60, 20):
+            base_fname = f'{base_path}{str(i).zfill(5)}'
+            color_img  = np.array(Image.open(f'{base_fname}_color.png'))
+            sseg_img   = np.array(Image.open(f'{base_fname}_sseg.png' ))
+            images.push(color_img)
+            images.push(sseg_img )
 
-        ret['gt_image'] = img
-        ret['cond_image'] = cond_image
-        ret['path'] = file_name
+        volume     = np.load(f'{base_path}10_slam_sdf.npz')
+        cond_image = stf.flatten(volume, images, self.out_size)
+        gt_image   = np.load(f'{base_path}04_scene_sdf.npz')
+
+        ret = {
+            'gt_image'   : gt_image,
+            'cond_image' : cond_image,
+            'path'       : base_path,
+        }
+
         return ret
 
     def __len__(self):

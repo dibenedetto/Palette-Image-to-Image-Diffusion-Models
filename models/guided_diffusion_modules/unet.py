@@ -5,8 +5,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-import transform
-
 from .nn import (
     checkpoint,
     zero_module,
@@ -14,6 +12,12 @@ from .nn import (
     count_flops_attn,
     gamma_embedding
 )
+
+
+import sys
+sys.path.append("..")
+import core.stf as stf
+
 
 class SiLU(nn.Module):
     def forward(self, x):
@@ -392,8 +396,8 @@ class UNet(nn.Module):
         if in_transform_name is not None:
             if in_transform_kwargs is None:
                 in_transform_kwargs = {}
-            if in_transform_name == "slam_transform":
-                self.in_transform = transform.SLAMTransform(**in_transform_kwargs)
+            if in_transform_name == 'stf.fuse':
+                self.in_transform = stf.Fuse(**in_transform_kwargs)
             else:
                 raise ValueError(f'in_transform_name "{in_transform_name}" is not recognized')
         else:

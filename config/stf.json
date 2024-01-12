@@ -1,5 +1,5 @@
 {
-    "name": "hslam", // experiments name
+    "name": "stf", // experiments name
     "gpu_ids": [0], // gpu ids list, default is single 0
     "seed" : -1, // random seed, seed <0 represents randomization not used 
     "finetune_norm": false, // find the parameters to optimize
@@ -17,11 +17,11 @@
     "datasets": { // train or test
         "train": { 
             "which_dataset": {  // import designated dataset using arguments 
-                "name": ["data.dataset", "HSLAMDataset"], // import Dataset() class / function(not recommend) from data.dataset.py (default is [data.dataset.py])
+                "name": ["data.dataset", "STFDataset"], // import Dataset() class / function(not recommend) from data.dataset.py (default is [data.dataset.py])
                 "args":{ // arguments to initialize dataset
-                    "data_root": "datasets/hslam/images",
-                    "data_flist": "datasets/hslam/flist/train.flist",
-                    "data_len": -1
+                    "data_root": "datasets/stf/train",
+                    "data_len": -1,
+                    "out_size": 64  // => image_size
                 } 
             },
             "dataloader":{
@@ -44,10 +44,11 @@
         },
         "test": { 
             "which_dataset": {
-                "name": "HSLAMDataset", // import Dataset() class / function(not recommend) from default file
+                "name": "STFDataset", // import Dataset() class / function(not recommend) from default file
                 "args":{
-                    "data_root": "datasets/hslam/images",
-                    "data_flist": "datasets/hslam/flist/test.flist"
+                    "data_root": "datasets/stf/test",
+                    "data_len": -1,
+                    "out_size": 64  // => image_size
                 }
             },
             "dataloader":{
@@ -65,7 +66,7 @@
             "name": ["models.model", "Palette"], // import Model() class / function(not recommend) from models.model.py (default is [models.model.py])
             "args": {
                 "sample_num": 8, // process of each image
-                "task": "hslam",
+                "task": "stf",
                 "ema_scheduler": {
                     "ema_start": 1,
                     "ema_iter": 1,
@@ -99,15 +100,16 @@
                         "res_blocks": 2,
                         "dropout": 0.2,
 
-                        // hslam
+                        // stf
                         ////////////////////////////////////////////////////////////////////////////
                         "in_channel"          : 4,
                         "out_channel"         : 1,
                         "image_size"          : 64,
-                        "in_transform_name"   : "slam_transform",
+                        "in_transform_name"   : "stf.fuse",
                         "in_transform_kwargs" : {
-                            "image_shape"     : [666, 64, 64],  // => (K, image_size, image_size)
-                            "out_channels"    : 4               // => in_channel
+                            "in_size"         : 64,  // => image_size
+                            "in_channels"     : 80,  // => image_size + K * 4
+                            "out_channels"    : 4    // => in_channel
                         }
                         ////////////////////////////////////////////////////////////////////////////
                     },
